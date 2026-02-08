@@ -2,6 +2,7 @@
 A simple n8n automation for automated detection of attacks ,reporting and response. This project utilizes the tools like suricata for rule based detection and send alert through splunk which triggers the automation . 
 
 Overview
+
 This project implements an automated cybersecurity pipeline for log analysis, threat detection, reporting, and incident response. It integrates OSSEC for host-based intrusion detection, Suricata for network monitoring, Splunk for centralized log management, n8n for workflow orchestration, Jira for ticketing, Perplexity AI nodes for intelligent analysis, and Gmail nodes for notifications.
 
 The system collects logs from OSSEC and Suricata, processes them in Splunk for correlation, uses n8n to trigger AI-driven analysis via Perplexity, creates Jira tickets for high-severity alerts, and sends summaries via Gmail.
