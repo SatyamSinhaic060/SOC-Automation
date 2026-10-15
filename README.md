@@ -88,12 +88,4 @@ The pipeline decomposes complex SOC threat detection and incident handling into 
 
 ---
 
-## 🚀 Setup & Installation
-
-### 1. Import Workflow into n8n
-1. Clone this repository:
-   ```bash
-   git clone [https://github.com/your-username/soc-automation-n8n.git](https://github.com/your-username/soc-automation-n8n.git)
-In your n8n web interface, go to Workflows $\rightarrow$ Import from File.Select the provided workflow.json file from this repository.2. Configure Credentials in n8nEnsure the following credentials are setup under your n8n environment:Splunk API: Server URL, API token, or username/password.HTTP Request Header Auth (VirusTotal): API Key passed as x-apikey.LDAP Credentials: Bind DN, password, and LDAPS host connection.SSH Credentials: Host IP, Port (22), Username, and Private Key / Password.Jira & Slack OAuth / API Tokens: Authorized workspace API tokens.🛡️ Security Considerations & Safety ControlsLeast-Privilege SSH Access: The SSH credential utilized by n8n should be restricted using sudoers rules to only execute specific iptables commands rather than granting full root shell access:Bash# Example sudoers entry for n8n SSH user
-n8n_user ALL=(ALL) NOPASSWD: /sbin/iptables
-Controlled Attack Simulation: Always ensure Hydra and Slowloris scripts are executed exclusively within authorized lab environments or isolated subnet segments.Human-in-the-Loop Option: A manual approval node can be inserted between the Triage Agent and Response Agent to require analyst authorization prior to executing firewall or directory containment.📄 LicenseThis project is open-source and available under the MIT License.
+📄 LicenseThis project is open-source and available under the MIT License.
