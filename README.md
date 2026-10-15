@@ -1,79 +1,99 @@
-# SOC-Automation
-A simple n8n automation for automated detection of attacks ,reporting and response. This project utilizes the tools like suricata for rule based detection and send alert through splunk which triggers the automation . 
+# Autonomous SOC Incident Response & Threat Detection Pipeline (n8n + Multi-AI Agent)
 
-Overview
+An automated Security Operations Center (SOC) incident response and threat detection pipeline built on **n8n**. This workflow captures real-time network and host alerts triggered by attack simulations (**Hydra** and **Slowloris**) using **Suricata (NIDS)** and **OSSEC (HIDS)**. It then leverages three specialized AI Agents (**Triage**, **Response**, and **Reporting**) operating in sequence to autonomously investigate SIEM events, execute active network/directory containment, and report actionable threat intelligence.
 
-This project implements an automated cybersecurity pipeline for log analysis, threat detection, reporting, and incident response. It integrates OSSEC for host-based intrusion detection, Suricata for network monitoring, Splunk for centralized log management, n8n for workflow orchestration, Jira for ticketing, Perplexity AI nodes for intelligent analysis, and Gmail nodes for notifications.
+---
 
-The system collects logs from OSSEC and Suricata, processes them in Splunk for correlation, uses n8n to trigger AI-driven analysis via Perplexity, creates Jira tickets for high-severity alerts, and sends summaries via Gmail.
+## 🏗️ Architecture & Workflow Overview
 
-Designed for virtualized environments like Kali Linux, Windows Server, and Docker containers, aligning with your cybersecurity lab setups.
+                  ┌─────────────────────────────────┐
+                  │  Simulated Attacks              │
+                  │  - Hydra (Brute-Force)          │
+                  │  - Slowloris (DoS)              │
+                  └────────────────┬────────────────┘
+                                   │
+                                   ▼
+                  ┌─────────────────────────────────┐
+                  │  Detection Layer                │
+                  │  - Suricata (NIDS)              │
+                  │  - OSSEC (HIDS)                 │
+                  └────────────────┬────────────────┘
+                                   │
+                                   ▼
+                  ┌─────────────────────────────────┐
+                  │  Splunk SIEM Aggregation        │
+                  └────────────────┬────────────────┘
+                                   │
+                                   ▼
+                  ┌─────────────────────────────────┐
+                  │    1. Triage AI Agent           │
+                  │  - Query Splunk (SIEM)          │
+                  │  - HTTP Threat Intel (VT)       │
+                  └────────────────┬────────────────┘
+                                   │
+                                   ▼
+                  ┌─────────────────────────────────┐
+                  │    2. Response AI Agent         │
+                  │  - Active Directory (LDAP)      │
+                  │  - Linux iptables (SSH)         │
+                  └────────────────┬────────────────┘
+                                   │
+                                   ▼
+                  ┌─────────────────────────────────┐
+                  │    3. Reporting AI Agent        │
+                  │  - Jira Ticket Creation         │
+                  │  - Slack Channel Alerting       │
+                  └─────────────────────────────────┘
 
-Architecture
-The pipeline follows this flow:
+The pipeline decomposes complex SOC threat detection and incident handling into three autonomous agents:
 
-Data Collection: OSSEC monitors host logs and file integrity; Suricata captures network events (e.g., brute-force, DoS simulations).
+### 1. Detection & Simulation Layer
+* **Attack Simulation:**
+  * **Hydra:** Simulates high-frequency credential brute-force attacks against target network services (SSH, FTP, Web forms).
+  * **Slowloris:** Executes Layer 7 Denial of Service (DoS) attacks by keeping HTTP connections open asynchronously.
+* **Network & Host Detection:**
+  * **Suricata (NIDS):** Inspects raw network packets to identify malicious signature patterns, flood attacks, and port scans.
+  * **OSSEC (HIDS):** Performs real-time host-level log analysis, file integrity monitoring (FIM), and failed login correlation.
 
-Ingestion: Logs forward to Splunk indexers via syslog or agents.
+### 2. Triage Agent (Investigation & Threat Intelligence)
+* **Splunk Integration:** Dynamically forms and executes Search Processing Language (SPL) queries against Splunk SIEM to extract context from ingested Suricata and OSSEC logs (Event IDs, IP addresses, user accounts, target services).
+* **HTTP Enrichment Tool:** Queries external threat intelligence APIs (e.g., VirusTotal, AbuseIPDB) to check IP reputations and gather threat scores.
+* **Analysis:** Aggregates raw logs and external intelligence to evaluate the incident's severity and malicious confidence score.
 
-Analysis: n8n workflows query Splunk, invoke Perplexity for anomaly detection (e.g., extracting errors by context ID), and score threats.
+### 3. Response Agent (Active Containment)
+* **LDAP Node (Active Directory):** Disables compromised domain user accounts, revokes active privileges, or moves targeted objects to quarantined Organizational Units (OUs).
+* **SSH Node (Network Firewall Enforcement):** Connects to target Linux hosts or firewall gateways via SSH to dynamically insert `iptables` drop rules, blocking malicious IP addresses at the host/network level (e.g., mitigating active Hydra brute-force IPs or Slowloris connections).
 
-Response: High-risk events create Jira issues; Gmail notifies your team; optional auto-remediation scripts.
+### 4. Reporting Agent (Communication & Ticket Lifecycle)
+* **Jira Node:** Automatically creates structured incident tickets containing triage findings, executed containment actions, IOC lists, and initial timeline details.
+* **Slack Node:** Formats rich markdown alerts and posts high-priority incident notifications to designated SOC channels (`#soc-alerts`) for human analyst visibility.
 
-Key integrations:
+---
 
-n8n triggers on Splunk alerts or schedules.
+## 🛠️ Prerequisites & Connected Integrations
 
-Perplexity nodes parse logs into tables (e.g., Error Type | Related Logs).
+| Tool / Layer | Component Category | Function in Pipeline |
+| :--- | :--- | :--- |
+| **Hydra** | Attack Simulation | Executes credential brute-force testing against target services. |
+| **Slowloris** | Attack Simulation | Simulates Layer 7 HTTP Denial-of-Service (DoS) connection flooding. |
+| **Suricata** | NIDS | Deep packet inspection for network-based anomaly and attack detection. |
+| **OSSEC** | HIDS | Host log analysis, rootkit detection, and file integrity monitoring. |
+| **Splunk Enterprise** | SIEM Ingestion | Aggregates logs from Suricata, OSSEC, and system event logs. |
+| **n8n** | SOAR / AI Agent | Multi-agent workflow orchestration and automated response execution. |
+| **VirusTotal / Threat APIs** | HTTP / REST | IOC Reputation Scoring & Threat Intelligence Enrichment. |
+| **Active Directory** | LDAP / LDAPS | Account Containment & User Status Modification. |
+| **Linux Endpoint / Gateway** | SSH / iptables | Dynamic Host Firewall Rule Insertion & Connection Dropping. |
+| **Jira Software** | REST API | Incident Tracking & Ticket Lifecycle Management. |
+| **Slack** | Webhook / API | Real-Time Team Notifications and Incident Alerts. |
 
-Jira nodes auto-assign tickets with log excerpts.
+---
 
-Gmail for executive summaries.
+## 🚀 Setup & Installation
 
-Components
-Tool	Role	Configuration Highlights
-OSSEC	Host IDS, log monitoring	Custom rules for your DVWA/Hydra tests; active response enabled.
-Suricata	Network IDS	Rulesets for exploits; eve.json output to Splunk.
-Splunk	SIEM, querying	Indexes for ossec/suricata; SPL for correlation searches.
-n8n	Orchestration	Workflows with cron triggers, HTTP to Splunk/Jira.
-Perplexity	AI log analysis	Prompts for error extraction, threat classification.
-Jira	Incident ticketing	API integration for auto-issue creation.
-Gmail	Notifications	Send analyzed reports, attach Splunk dashboards.
-Setup Instructions
-Deploy VMs: Kali (Suricata/OSSEC), Ubuntu (n8n/Splunk forwarder), Windows Server (AD simulation).
-
-Install tools:
-
-OSSEC: yum install ossec-hids-server; add Suricata log parser.
-
-Suricata: suricata -c /etc/suricata/suricata.yaml.
-
-n8n: Docker (docker run -p 5678:5678 n8nio/n8n); add credentials for Splunk/Jira/Gmail/Perplexity.
-
-Configure Splunk: Add inputs for OSSEC/Suricata; create alerts feeding n8n webhooks.
-
-Build n8n workflows: Import JSON from your past chats (e.g., log fetch → Perplexity → Switch node → Jira/Gmail).
-
-Test: Simulate attacks (nmap, hydra); verify end-to-end alerts.
-
-Workflows Example
-Daily Log Scan: Cron → Splunk query → Perplexity analysis → Gmail report.
-
-Alert Response: Splunk webhook → n8n → Threat score > 7? → Jira ticket + Gmail.
-
-Example n8n prompt for Perplexity:
-
-text
-Analyze logs for errors by context ID. Output table:
-Error Type | Related Logs
-Usage and Testing
-Run in your VirtualBox/WSL2 lab. Monitor via Splunk dashboard. Scale with Docker Compose for production-like testing.
-
-Past chats from ~Nov 2025 detailed your n8n JSON exports and Splunk queries—import those for quick start.
-
-Future Enhancements
-Add ML models (e.g., transformers for anomaly detection).
-
-Integrate blockchain for log integrity.
-
-Expand to Spark for big data logs.
+### 1. Import Workflow into n8n
+1. Clone this repository:
+   ```bash
+   git clone [https://github.com/your-username/soc-automation-n8n.git](https://github.com/your-username/soc-automation-n8n.git)
+In your n8n web interface, go to Workflows $\rightarrow$ Import from File.Select the provided workflow.json file from this repository.2. Configure Credentials in n8nEnsure the following credentials are setup under your n8n environment:Splunk API: Server URL, API token, or username/password.HTTP Request Header Auth (VirusTotal): API Key passed as x-apikey.LDAP Credentials: Bind DN, password, and LDAPS host connection.SSH Credentials: Host IP, Port (22), Username, and Private Key / Password.Jira & Slack OAuth / API Tokens: Authorized workspace API tokens.🛡️ Security Considerations & Safety ControlsLeast-Privilege SSH Access: The SSH credential utilized by n8n should be restricted using sudoers rules to only execute specific iptables commands rather than granting full root shell access:Bash# Example sudoers entry for n8n SSH user
+n8n_user ALL=(ALL) NOPASSWD: /sbin/iptables
+Controlled Attack Simulation: Always ensure Hydra and Slowloris scripts are executed exclusively within authorized lab environments or isolated subnet segments.Human-in-the-Loop Option: A manual approval node can be inserted between the Triage Agent and Response Agent to require analyst authorization prior to executing firewall or directory containment.📄 LicenseThis project is open-source and available under the MIT License.
